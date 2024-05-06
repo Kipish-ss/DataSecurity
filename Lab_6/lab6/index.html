@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+      html {
+        height: 100%;
+      }
+
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        display: grid;
+        justify-items: center;
+        align-items: center;
+        background-color: #3a3a3a;
+      }
+
+      #logout {
+        opacity: 0;
+      }
+
+      #main-holder {
+        width: 50%;
+        height: 70%;
+        display: grid;
+        justify-items: center;
+        align-items: center;
+        background-color: white;
+        border-radius: 7px;
+        box-shadow: 0px 0px 5px 2px black;
+      }
+    </style>
+  </head>
+
+  <body>
+    <main id="main-holder">
+      <a href="/logout" id="logout">Logout</a>
+    </main>
+  </body>
+
+  <script>
+    const logoutLink = document.getElementById('logout')
+
+    const mainHolder = document.getElementById('main-holder')
+
+    const queryParams = new URLSearchParams(window.location.search)
+    const setToken = queryParams.get('token')
+    const session = sessionStorage.getItem('session')
+
+    let token
+
+    if (setToken) {
+      sessionStorage.setItem('session', JSON.stringify({ token: setToken }))
+      token = setToken
+      const newUrl = window.location.pathname
+      window.history.pushState('', 'Profile', newUrl)
+    }
+
+    try {
+      token = JSON.parse(session).token
+    } catch (e) {}
+
+    if (!token) {
+      location.href = '/login'
+    }
+    if (token) {
+      axios
+        .get('/api/userinfo', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        .then((response) => {
+          const { user } = response.data
+
+          if (user) {
+            const div = document.createElement('div')
+            div.innerHTML = `
+                <p>id: ${user.sub}</p>
+                <p>given_name: ${user.given_name}</p>
+                <p>family_name: ${user.family_name}</p>
+                <p>nickname: ${user.nickname}</p>
+                <p>name: ${user.name}</p>
+                <p>email: ${user.email}</p>
+                <img src='${user.picture}' alt='Profile pic' width="100" height="100"/>
+            `
+            mainHolder.appendChild(div)
+
+            logoutLink.style.opacity = 1
+          }
+        })
+    }
+
+    logoutLink.addEventListener('click', (e) => {
+      e.preventDefault()
+      sessionStorage.removeItem('session')
+      location.reload()
+    })
+  </script>
+</html>
