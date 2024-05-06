@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Login</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        html {
+            height: 100%;
+        }
+
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            display: grid;
+            justify-items: center;
+            align-items: center;
+            background-color: #3a3a3a;
+        }
+
+        #logout {
+            opacity: 0;
+        }
+
+        #main-holder {
+            width: 50%;
+            height: 70%;
+            display: grid;
+            justify-items: center;
+            align-items: center;
+            background-color: white;
+            border-radius: 7px;
+            box-shadow: 0px 0px 5px 2px black;
+        }
+
+        #login-error-msg-holder {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            justify-items: center;
+            align-items: center;
+        }
+
+        #login-error-msg {
+            width: 23%;
+            text-align: center;
+            margin: 0;
+            padding: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #8a0000;
+            border: 1px solid #8a0000;
+            background-color: #e58f8f;
+            opacity: 0;
+        }
+
+        #error-msg-second-line {
+            display: block;
+        }
+
+        #login-form,
+        #register-form {
+            align-self: flex-start;
+            display: grid;
+            justify-items: center;
+            align-items: center;
+        }
+
+        .login-form-field::placeholder {
+            color: #3a3a3a;
+        }
+
+        .login-form-field {
+            border: none;
+            border-bottom: 1px solid #3a3a3a;
+            margin-bottom: 10px;
+            border-radius: 3px;
+            outline: none;
+            padding: 0px 0px 5px 5px;
+        }
+
+        #login-form-submit,
+        #register-form-submit {
+            width: 100%;
+            padding: 7px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            background-color: #3a3a3a;
+            cursor: pointer;
+            outline: none;
+        }
+
+        #login-form,
+        #register-form,
+        #login-header,
+        #register-header {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+<main id="main-holder">
+    <a href="/logout" id="logout">Logout</a>
+
+    <h1 id="login-header">Login</h1>
+
+    <div id="login-error-msg-holder">
+        <p id="login-error-msg">
+            Invalid username
+            <span id="error-msg-second-line">and/or password</span>
+        </p>
+    </div>
+
+    <form id="login-form" action="/api/login" method="post">
+        <input
+                type="text"
+                name="login"
+                id="username-field"
+                class="login-form-field"
+                placeholder="Username"
+                required/>
+        <input
+                type="password"
+                name="password"
+                id="password-field"
+                class="login-form-field"
+                placeholder="Password"
+                required/>
+        <input type="submit" value="Login" id="login-form-submit"/>
+    </form>
+
+    <h1 id="register-header">Register</h1>
+
+    <form id="register-form" action="/api/register" method="post">
+        <input
+                type="email"
+                name="email"
+                id="email"
+                class="login-form-field"
+                placeholder="Email"
+                required/>
+        <input
+                type="text"
+                name="name"
+                id="name"
+                class="login-form-field"
+                placeholder="Name"
+                required/>
+        <input
+                type="text"
+                name="nickname"
+                id="nickname"
+                class="login-form-field"
+                placeholder="Nickname"
+                required/>
+
+        <input
+                type="password"
+                name="password"
+                id="password-field"
+                class="login-form-field"
+                placeholder="Password"
+                required/>
+        <input type="submit" value="Regiser" id="register-form-submit"/>
+    </form>
+</main>
+</body>
+
+<script>
+    const loginForm = document.getElementById('login-form')
+    const loginButton = document.getElementById('login-form-submit')
+    const loginErrorMsg = document.getElementById('login-error-msg')
+    const logoutLink = document.getElementById('logout')
+
+    const RegisterForm = document.getElementById('register-form')
+    const RegisterButton = document.getElementById('register-form-submit')
+    const RegisterErrorMsg = document.getElementById('register-error-msg')
+
+    const mainHolder = document.getElementById('main-holder')
+    const loginHeader = document.getElementById('login-header')
+    const registerHeader = document.getElementById('register-header')
+
+    const session = sessionStorage.getItem('session')
+
+    let token
+
+    try {
+        token = JSON.parse(session).token
+    } catch (e) {
+    }
+
+    if (!token) {
+        loginForm.style.display = 'grid'
+        RegisterForm.style.display = 'grid'
+        loginHeader.style.display = 'block'
+        registerHeader.style.display = 'block'
+    }
+    if (token) {
+        axios
+            .get('/api/userinfo', {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            })
+            .then((response) => {
+                const {user} = response.data
+
+                if (user) {
+                    loginForm.remove()
+                    loginErrorMsg.remove()
+                    loginHeader.remove()
+                    registerHeader.remove()
+                    RegisterForm.remove()
+
+                    const div = document.createElement('div')
+                    div.innerHTML = `
+                <p>id: ${user.sub}</p>
+                <p>given_name: ${user.given_name}</p>
+                <p>family_name: ${user.family_name}</p>
+                <p>nickname: ${user.nickname}</p>
+                <p>name: ${user.name}</p>
+                <p>email: ${user.email}</p>
+                <img src='${user.picture}' alt='Profile pic' width="100" height="100"/>
+            `
+                    mainHolder.appendChild(div)
+
+                    logoutLink.style.opacity = 1
+                }
+            })
+    }
+
+    logoutLink.addEventListener('click', (e) => {
+        e.preventDefault()
+        sessionStorage.removeItem('session')
+        location.reload()
+    })
+
+    loginButton.addEventListener('click', (e) => {
+        e.preventDefault()
+        const login = loginForm.login.value
+        const password = loginForm.password.value
+
+        axios({
+            method: 'post',
+            url: '/api/login',
+            data: {
+                login,
+                password,
+            },
+        })
+            .then((response) => {
+                const {username} = response.data
+                sessionStorage.setItem('session', JSON.stringify(response.data))
+                location.reload()
+            })
+            .catch((response) => {
+                loginErrorMsg.style.opacity = 1
+            })
+    })
+</script>
+</html>
